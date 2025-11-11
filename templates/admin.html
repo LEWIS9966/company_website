@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+
+{% block title %}管理后台 - 联系表单数据{% endblock %}
+
+{% block extra_css %}
+<style>
+.admin-container {
+    padding: 2rem 0;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.search-box {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.search-box input {
+    padding: 0.5rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 5px;
+    font-size: 1rem;
+}
+
+.search-box select {
+    padding: 0.5rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 5px;
+    font-size: 1rem;
+}
+
+.contacts-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    box-shadow: var(--shadow);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.contacts-table th,
+.contacts-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.contacts-table th {
+    background: var(--bg-light);
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.contacts-table tr:hover {
+    background: var(--bg-light);
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 2rem;
+}
+
+.pagination button {
+    padding: 0.5rem 1rem;
+    border: 2px solid var(--border-color);
+    background: white;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.pagination button:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.pagination button.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.pagination button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    text-align: center;
+}
+
+.stat-card h3 {
+    font-size: 2rem;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.stat-card p {
+    color: var(--text-light);
+}
+
+.loading {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-light);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-light);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="container">
+        <div class="admin-header">
+            <h1>联系表单数据管理</h1>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="搜索姓名、手机、邮箱或需求...">
+                <select id="sortSelect">
+                    <option value="submit_time">按时间排序</option>
+                    <option value="name">按姓名排序</option>
+                </select>
+                <button class="btn btn-primary" onclick="loadContacts()">搜索</button>
+            </div>
+        </div>
+
+        <div class="stats" id="stats">
+            <div class="stat-card">
+                <h3 id="totalCount">-</h3>
+                <p>总记录数</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="todayCount">-</h3>
+                <p>今日提交</p>
+            </div>
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">加载中...</div>
+        <div id="emptyState" class="empty-state" style="display: none;">暂无数据</div>
+
+        <table class="contacts-table" id="contactsTable" style="display: none;">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>姓名</th>
+                    <th>性别</th>
+                    <th>手机</th>
+                    <th>邮箱</th>
+                    <th>需求</th>
+                    <th>提交时间</th>
+                </tr>
+            </thead>
+            <tbody id="contactsTableBody">
+            </tbody>
+        </table>
+
+        <div class="pagination" id="pagination" style="display: none;">
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentPage = 1;
+let totalPages = 1;
+let currentSearch = '';
+let currentSort = 'submit_time';
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadContacts();
+
+    // 搜索输入框回车事件
+    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            loadContacts();
+        }
+    });
+
+    // 排序选择变化事件
+    document.getElementById('sortSelect').addEventListener('change', function() {
+        currentSort = this.value;
+        currentPage = 1;
+        loadContacts();
+    });
+});
+
+function loadContacts(page = 1) {
+    currentPage = page;
+    currentSearch = document.getElementById('searchInput').value;
+    currentSort = document.getElementById('sortSelect').value;
+
+    const loading = document.getElementById('loading');
+    const table = document.getElementById('contactsTable');
+    const tableBody = document.getElementById('contactsTableBody');
+    const emptyState = document.getElementById('emptyState');
+    const pagination = document.getElementById('pagination');
+
+    loading.style.display = 'block';
+    table.style.display = 'none';
+    emptyState.style.display = 'none';
+    pagination.style.display = 'none';
+
+    let url = `/api/contacts?page=${page}&per_page=20&sort_by=${currentSort}`;
+    if (currentSearch) {
+        url += `&search=${encodeURIComponent(currentSearch)}`;
+    }
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            loading.style.display = 'none';
+
+            if (data.success) {
+                // 更新统计信息
+                document.getElementById('totalCount').textContent = data.total;
+                
+                // 计算今日提交数（这里简化处理，实际应该从后端获取）
+                const today = new Date().toISOString().split('T')[0];
+                const todayCount = data.data.filter(item => {
+                    return item.submit_time.startsWith(today);
+                }).length;
+                document.getElementById('todayCount').textContent = todayCount;
+
+                if (data.data.length > 0) {
+                    table.style.display = 'table';
+                    tableBody.innerHTML = '';
+
+                    data.data.forEach(contact => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${contact.id}</td>
+                            <td>${contact.name}</td>
+                            <td>${contact.gender}</td>
+                            <td>${contact.phone || '-'}</td>
+                            <td>${contact.email || '-'}</td>
+                            <td>${contact.requirements.length > 50 ? contact.requirements.substring(0, 50) + '...' : contact.requirements}</td>
+                            <td>${contact.submit_time}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+
+                    // 更新分页
+                    totalPages = data.pages;
+                    updatePagination(data.page, data.pages);
+                    pagination.style.display = 'flex';
+                } else {
+                    emptyState.style.display = 'block';
+                }
+            } else {
+                alert('加载数据失败：' + (data.message || '未知错误'));
+            }
+        })
+        .catch(error => {
+            loading.style.display = 'none';
+            console.error('Error:', error);
+            alert('加载数据失败，请检查网络连接');
+        });
+}
+
+function updatePagination(currentPage, totalPages) {
+    const pagination = document.getElementById('pagination');
+    pagination.innerHTML = '';
+
+    // 上一页按钮
+    const prevButton = document.createElement('button');
+    prevButton.textContent = '上一页';
+    prevButton.disabled = currentPage === 1;
+    prevButton.onclick = () => loadContacts(currentPage - 1);
+    pagination.appendChild(prevButton);
+
+    // 页码按钮
+    const startPage = Math.max(1, currentPage - 2);
+    const endPage = Math.min(totalPages, currentPage + 2);
+
+    if (startPage > 1) {
+        const firstButton = document.createElement('button');
+        firstButton.textContent = '1';
+        firstButton.onclick = () => loadContacts(1);
+        pagination.appendChild(firstButton);
+
+        if (startPage > 2) {
+            const ellipsis = document.createElement('span');
+            ellipsis.textContent = '...';
+            ellipsis.style.padding = '0.5rem';
+            pagination.appendChild(ellipsis);
+        }
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        const pageButton = document.createElement('button');
+        pageButton.textContent = i;
+        pageButton.className = i === currentPage ? 'active' : '';
+        pageButton.onclick = () => loadContacts(i);
+        pagination.appendChild(pageButton);
+    }
+
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            const ellipsis = document.createElement('span');
+            ellipsis.textContent = '...';
+            ellipsis.style.padding = '0.5rem';
+            pagination.appendChild(ellipsis);
+        }
+
+        const lastButton = document.createElement('button');
+        lastButton.textContent = totalPages;
+        lastButton.onclick = () => loadContacts(totalPages);
+        pagination.appendChild(lastButton);
+    }
+
+    // 下一页按钮
+    const nextButton = document.createElement('button');
+    nextButton.textContent = '下一页';
+    nextButton.disabled = currentPage === totalPages;
+    nextButton.onclick = () => loadContacts(currentPage + 1);
+    pagination.appendChild(nextButton);
+}
+</script>
+{% endblock %}
+

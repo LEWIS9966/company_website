@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}产品中心 - 企业展示网站{% endblock %}
+
+{% block content %}
+<!-- 页面标题 -->
+<section class="page-header">
+    <div class="container">
+        <h1>产品中心</h1>
+        <p>探索我们的优质产品与服务</p>
+    </div>
+</section>
+
+<!-- 产品列表 -->
+<section class="products-page">
+    <div class="container">
+        <div class="products-grid">
+            <div class="product-card">
+                <div class="product-image">
+                    <img src="{{ url_for('static', filename='images/product1.jpg') }}" alt="产品1" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22150%22%3E%3Crect fill=%22%23ddd%22 width=%22200%22 height=%22150%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2214%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3E产品图片%3C/text%3E%3C/svg%3E'">
+                </div>
+                <div class="product-info">
+                    <h3>产品名称一</h3>
+                    <p class="product-description">高效稳定的核心产品，适用于多种业务场景，提供完善的技术支持。具有高性能、高可用性、易扩展等特点。</p>
+                    <ul class="product-features">
+                        <li>✓ 高性能处理能力</li>
+                        <li>✓ 完善的售后服务</li>
+                        <li>✓ 灵活定制方案</li>
+                    </ul>
+                    <a href="{{ url_for('contact') }}" class="btn btn-outline">咨询详情</a>
+                </div>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image">
+                    <img src="{{ url_for('static', filename='images/product2.jpg') }}" alt="产品2" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22150%22%3E%3Crect fill=%22%23ddd%22 width=%22200%22 height=%22150%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2214%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3E产品图片%3C/text%3E%3C/svg%3E'">
+                </div>
+                <div class="product-info">
+                    <h3>产品名称二</h3>
+                    <p class="product-description">智能化管理平台，提升工作效率，降低运营成本，助力企业快速发展。集成了先进的人工智能技术。</p>
+                    <ul class="product-features">
+                        <li>✓ AI智能分析</li>
+                        <li>✓ 数据可视化</li>
+                        <li>✓ 云端部署</li>
+                    </ul>
+                    <a href="{{ url_for('contact') }}" class="btn btn-outline">咨询详情</a>
+                </div>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image">
+                    <img src="{{ url_for('static', filename='images/product3.jpg') }}" alt="产品3" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22150%22%3E%3Crect fill=%22%23ddd%22 width=%22200%22 height=%22150%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2214%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3E产品图片%3C/text%3E%3C/svg%3E'">
+                </div>
+                <div class="product-info">
+                    <h3>产品名称三</h3>
+                    <p class="product-description">安全可靠的数据解决方案，保障企业数据安全，满足合规要求。采用多层加密技术，确保数据安全。</p>
+                    <ul class="product-features">
+                        <li>✓ 数据加密保护</li>
+                        <li>✓ 合规认证</li>
+                        <li>✓ 灾备恢复</li>
+                    </ul>
+                    <a href="{{ url_for('contact') }}" class="btn btn-outline">咨询详情</a>
+                </div>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image">
+                    <img src="{{ url_for('static', filename='images/product4.jpg') }}" alt="产品4" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22150%22%3E%3Crect fill=%22%23ddd%22 width=%22200%22 height=%22150%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2214%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3E产品图片%3C/text%3E%3C/svg%3E'">
+                </div>
+                <div class="product-info">
+                    <h3>产品名称四</h3>
+                    <p class="product-description">全面的咨询服务，专业团队提供一对一指导，帮助企业实现目标。覆盖战略规划、技术咨询等多个领域。</p>
+                    <ul class="product-features">
+                        <li>✓ 专业咨询团队</li>
+                        <li>✓ 定制化方案</li>
+                        <li>✓ 全程跟踪服务</li>
+                    </ul>
+                    <a href="{{ url_for('contact') }}" class="btn btn-outline">咨询详情</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
