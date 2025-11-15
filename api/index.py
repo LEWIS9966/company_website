@@ -9,21 +9,36 @@ import os
 from sqlalchemy import desc
 
 # 创建Flask应用
-app = Flask(__name__, 
-            template_folder='../templates',
-            static_folder='../static',
-            static_url_path='/static')
+BASE_DIR = os.path.dirname(__file__)
+TEMPLATES_DIR = os.path.join(BASE_DIR, '..', 'templates')
+STATIC_DIR = os.path.join(BASE_DIR, '..', 'static')
+
+app = Flask(
+    __name__,
+    template_folder=TEMPLATES_DIR,
+    static_folder=STATIC_DIR,
+    static_url_path='/static'
+)
 
 # 数据库配置 - 使用环境变量
 database_url = os.environ.get('DATABASE_URL') or os.environ.get('POSTGRES_URL')
-if database_url:
-    # Vercel Postgres 或其他数据库（生产环境）
-    if database_url.startswith('postgres://'):
-        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+
+if database_url and database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+
+DB_AVAILABLE = bool(database_url)
+
+if DB_AVAILABLE:
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 else:
-    # 如果没有配置数据库，使用占位符（部署时需要配置Vercel Postgres）
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://user:pass@localhost/db'
+    enable_db = os.environ.get('ENABLE_DB', 'true').lower() == 'true'
+    DB_AVAILABLE = enable_db
+    if enable_db:
+        # 临时 SQLite（Vercel 允许写 /tmp；数据不持久）
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/contacts.db'
+    else:
+        # 纯内存占位，后续 API 会返回 503 提示
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here-change-in-production')
@@ -55,7 +70,8 @@ class Contact(db.Model):
 
 # 初始化数据库
 def init_db():
-    """初始化数据库表"""
+    if not DB_AVAILABLE:
+        return
     try:
         with app.app_context():
             db.create_all()
@@ -87,6 +103,12 @@ def admin():
 # API路由
 @app.route('/api/submit-contact', methods=['POST'])
 def submit_contact():
+    if not DB_AVAILABLE:
+        return jsonify({
+            'success': False,
+            'message': '当前未配置数据库，已收到提交但无法持久化，请稍后通过邮箱/WhatsApp联系'
+        }), 503
+
     try:
         data = request.get_json()
         
@@ -141,48 +163,48 @@ def submit_contact():
 @app.route('/api/contacts', methods=['GET'])
 def get_contacts():
     """管理员查看联系表单数据"""
-    try:
-        # 初始化数据库
-        init_db()
-        
-        # 支持查询参数
-        page = request.args.get('page', 1, type=int)
-        per_page = request.args.get('per_page', 20, type=int)
-        search = request.args.get('search', '')
-        sort_by = request.args.get('sort_by', 'submit_time')
-        
-        query = Contact.query
-        
-        # 搜索功能
-        if search:
-            query = query.filter(
-                db.or_(
-                    Contact.name.contains(search),
-                    Contact.phone.contains(search),
-                    Contact.email.contains(search),
-                    Contact.requirements.contains(search)
-                )
+    if not DB_AVAILABLE:
+        return jsonify({'success': False, 'message': '当前未配置数据库'}), 503
+
+    init_db()
+    # 支持查询参数
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    search = request.args.get('search', '')
+    sort_by = request.args.get('sort_by', 'submit_time')
+    
+    query = Contact.query
+    
+    # 搜索功能
+    if search:
+        query = query.filter(
+            db.or_(
+                Contact.name.contains(search),
+                Contact.phone.contains(search),
+                Contact.email.contains(search),
+                Contact.requirements.contains(search)
             )
-        
-        # 排序
-        if sort_by == 'submit_time':
-            query = query.order_by(desc(Contact.submit_time))
-        elif sort_by == 'name':
-            query = query.order_by(Contact.name)
-        
-        # 分页
-        pagination = query.paginate(page=page, per_page=per_page, error_out=False)
-        contacts = pagination.items
-        
-        return jsonify({
-            'success': True,
-            'data': [contact.to_dict() for contact in contacts],
-            'total': pagination.total,
-            'page': page,
-            'per_page': per_page,
-            'pages': pagination.pages
-        }), 200
-        
+        )
+    
+    # 排序
+    if sort_by == 'submit_time':
+        query = query.order_by(desc(Contact.submit_time))
+    elif sort_by == 'name':
+        query = query.order_by(Contact.name)
+    
+    # 分页
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    contacts = pagination.items
+    
+    return jsonify({
+        'success': True,
+        'data': [contact.to_dict() for contact in contacts],
+        'total': pagination.total,
+        'page': page,
+        'per_page': per_page,
+        'pages': pagination.pages
+    }), 200
+    
     except Exception as e:
         print(f"查询联系表单错误: {e}")
         return jsonify({'success': False, 'message': f'查询失败：{str(e)}'}), 500
