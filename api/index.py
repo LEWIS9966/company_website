@@ -165,45 +165,45 @@ def get_contacts():
     """管理员查看联系表单数据"""
     if not DB_AVAILABLE:
         return jsonify({'success': False, 'message': '当前未配置数据库'}), 503
-
-    init_db()
-    # 支持查询参数
-    page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 20, type=int)
-    search = request.args.get('search', '')
-    sort_by = request.args.get('sort_by', 'submit_time')
-    
-    query = Contact.query
-    
-    # 搜索功能
-    if search:
-        query = query.filter(
-            db.or_(
-                Contact.name.contains(search),
-                Contact.phone.contains(search),
-                Contact.email.contains(search),
-                Contact.requirements.contains(search)
+    try:
+        init_db()
+        # 支持查询参数
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+        search = request.args.get('search', '')
+        sort_by = request.args.get('sort_by', 'submit_time')
+        
+        query = Contact.query
+        
+        # 搜索功能
+        if search:
+            query = query.filter(
+                db.or_(
+                    Contact.name.contains(search),
+                    Contact.phone.contains(search),
+                    Contact.email.contains(search),
+                    Contact.requirements.contains(search)
+                )
             )
-        )
-    
-    # 排序
-    if sort_by == 'submit_time':
-        query = query.order_by(desc(Contact.submit_time))
-    elif sort_by == 'name':
-        query = query.order_by(Contact.name)
-    
-    # 分页
-    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
-    contacts = pagination.items
-    
-    return jsonify({
-        'success': True,
-        'data': [contact.to_dict() for contact in contacts],
-        'total': pagination.total,
-        'page': page,
-        'per_page': per_page,
-        'pages': pagination.pages
-    }), 200
+        
+        # 排序
+        if sort_by == 'submit_time':
+            query = query.order_by(desc(Contact.submit_time))
+        elif sort_by == 'name':
+            query = query.order_by(Contact.name)
+        
+        # 分页
+        pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+        contacts = pagination.items
+        
+        return jsonify({
+            'success': True,
+            'data': [contact.to_dict() for contact in contacts],
+            'total': pagination.total,
+            'page': page,
+            'per_page': per_page,
+            'pages': pagination.pages
+        }), 200
     
     except Exception as e:
         print(f"查询联系表单错误: {e}")
