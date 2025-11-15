@@ -6,6 +6,7 @@ from flask import Flask, render_template, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import os
+import logging
 from sqlalchemy import desc
 
 # 创建Flask应用
@@ -19,6 +20,10 @@ app = Flask(
     static_folder=STATIC_DIR,
     static_url_path='/static'
 )
+
+log_level = os.environ.get('LOG_LEVEL', 'INFO').upper()
+logging.basicConfig(level=getattr(logging, log_level, logging.INFO), format='%(asctime)s %(levelname)s %(message)s')
+app.logger.info("app_initialized templates=%s static=%s", TEMPLATES_DIR, STATIC_DIR)
 
 # 数据库配置 - 使用环境变量
 database_url = os.environ.get('DATABASE_URL') or os.environ.get('POSTGRES_URL')
@@ -42,6 +47,10 @@ else:
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here-change-in-production')
+
+_uri = app.config.get('SQLALCHEMY_DATABASE_URI')
+_scheme = _uri.split(':', 1)[0] if _uri else 'none'
+app.logger.info("db_config available=%s scheme=%s", DB_AVAILABLE, _scheme)
 
 db = SQLAlchemy(app)
 
@@ -74,36 +83,44 @@ def init_db():
         return
     try:
         with app.app_context():
+            app.logger.info("init_db start")
             db.create_all()
+            app.logger.info("init_db ok")
     except Exception as e:
-        print(f"数据库初始化警告: {e}")
+        app.logger.exception("init_db error")
         # 在生产环境中，如果数据库未配置，这里会失败但不会阻止应用启动
 
 # 页面路由
 @app.route('/')
 def index():
+    app.logger.info("route %s", request.path)
     return render_template('index.html')
 
 @app.route('/about')
 def about():
+    app.logger.info("route %s", request.path)
     return render_template('about.html')
 
 @app.route('/contact')
 def contact():
+    app.logger.info("route %s", request.path)
     return render_template('contact.html')
 
 @app.route('/products')
 def products():
+    app.logger.info("route %s", request.path)
     return render_template('products.html')
 
 @app.route('/admin')
 def admin():
+    app.logger.info("route %s", request.path)
     return render_template('admin.html')
 
 # API路由
 @app.route('/api/submit-contact', methods=['POST'])
 def submit_contact():
     if not DB_AVAILABLE:
+        app.logger.info("submit_contact unavailable_db")
         return jsonify({
             'success': False,
             'message': '当前未配置数据库，已收到提交但无法持久化，请稍后通过邮箱/WhatsApp联系'
@@ -111,26 +128,40 @@ def submit_contact():
 
     try:
         data = request.get_json()
+        app.logger.info(
+            "submit_contact received name=%s gender=%s phone=%s email=%s has_requirements=%s",
+            bool(data and data.get('name')),
+            bool(data and data.get('gender')),
+            bool(data and data.get('phone')),
+            bool(data and data.get('email')),
+            bool(data and data.get('requirements'))
+        )
         
         # 验证必填字段
         if not data or not data.get('name'):
+            app.logger.info("submit_contact validation name_missing")
             return jsonify({'success': False, 'message': '请输入客户称呼'}), 400
         
         if not data.get('gender'):
+            app.logger.info("submit_contact validation gender_missing")
             return jsonify({'success': False, 'message': '请选择性别'}), 400
         
         if not data.get('phone') and not data.get('email'):
+            app.logger.info("submit_contact validation contact_missing")
             return jsonify({'success': False, 'message': '请至少填写手机或邮箱其中一项'}), 400
         
         if not data.get('requirements'):
+            app.logger.info("submit_contact validation requirements_missing")
             return jsonify({'success': False, 'message': '请填写具体需求'}), 400
         
         # 验证手机号格式
         if data.get('phone') and len(data.get('phone')) < 10:
+            app.logger.info("submit_contact validation phone_invalid")
             return jsonify({'success': False, 'message': '手机号格式不正确'}), 400
         
         # 验证邮箱格式
         if data.get('email') and '@' not in data.get('email'):
+            app.logger.info("submit_contact validation email_invalid")
             return jsonify({'success': False, 'message': '邮箱格式不正确'}), 400
         
         # 初始化数据库
@@ -146,8 +177,10 @@ def submit_contact():
             submit_time=datetime.now()
         )
         
+        app.logger.info("submit_contact create")
         db.session.add(contact)
         db.session.commit()
+        app.logger.info("submit_contact ok id=%s", contact.id)
         
         return jsonify({
             'success': True,
@@ -157,7 +190,7 @@ def submit_contact():
     except Exception as e:
         if db.session:
             db.session.rollback()
-        print(f"提交联系表单错误: {e}")
+        app.logger.exception("submit_contact error")
         return jsonify({'success': False, 'message': f'提交失败：{str(e)}'}), 500
 
 @app.route('/api/contacts', methods=['GET'])
@@ -166,12 +199,14 @@ def get_contacts():
     if not DB_AVAILABLE:
         return jsonify({'success': False, 'message': '当前未配置数据库'}), 503
     try:
+        app.logger.info("get_contacts start")
         init_db()
         # 支持查询参数
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 20, type=int)
         search = request.args.get('search', '')
         sort_by = request.args.get('sort_by', 'submit_time')
+        app.logger.info("get_contacts params page=%s per_page=%s sort_by=%s search_len=%s", page, per_page, sort_by, len(search or ''))
         
         query = Contact.query
         
@@ -195,6 +230,7 @@ def get_contacts():
         # 分页
         pagination = query.paginate(page=page, per_page=per_page, error_out=False)
         contacts = pagination.items
+        app.logger.info("get_contacts ok total=%s page=%s pages=%s count=%s", pagination.total, page, pagination.pages, len(contacts))
         
         return jsonify({
             'success': True,
@@ -206,7 +242,7 @@ def get_contacts():
         }), 200
     
     except Exception as e:
-        print(f"查询联系表单错误: {e}")
+        app.logger.exception("get_contacts error")
         return jsonify({'success': False, 'message': f'查询失败：{str(e)}'}), 500
 
 # Vercel Python运行时需要导出app对象
