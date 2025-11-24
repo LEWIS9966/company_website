@@ -1,0 +1,74 @@
+---
+const { title } = Astro.props
+---
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{title}</title>
+    <link rel="stylesheet" href="/css/style.css">
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="nav-brand">
+          <a href="/">企业LOGO</a>
+        </div>
+        <ul class="nav-menu" id="navMenu">
+          <li><a href="/" class="nav-link">首页</a></li>
+          <li><a href="/products" class="nav-link">产品中心</a></li>
+          <li><a href="/about" class="nav-link">公司简介</a></li>
+          <li><a href="/contact" class="nav-link">联系我们</a></li>
+        </ul>
+        <div class="nav-toggle" id="navToggle">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+    </nav>
+    <main>
+      <slot />
+    </main>
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-content">
+          <div class="footer-section">
+            <h3>公司信息</h3>
+            <p>成立时间：2010年</p>
+            <p>企业愿景：成为行业领先的解决方案提供商</p>
+            <p>资质认证：ISO 9001质量管理体系认证</p>
+          </div>
+          <div class="footer-section">
+            <h3>联系方式</h3>
+            <p>
+              WhatsApp：
+              <a href="https://wa.me/8613800138000?text=%E6%82%A8%E5%A5%BD%EF%BC%8C%E6%88%91%E6%83%B3%E5%92%A8%E8%AF%A2%E4%BA%A7%E5%93%81%E4%BF%A1%E6%81%AF" target="_blank" rel="noopener">点击咨询</a>
+            </p>
+            <p>
+              邮箱：
+              <a href="mailto:contact@company.com?subject=%E5%95%86%E5%8A%A1%E5%90%88%E4%BD%9C%E5%92%A8%E8%AF%A2&body=%E6%82%A8%E5%A5%BD%EF%BC%8C%E6%88%91%E6%83%B3%E4%BA%86%E8%A7%A3%E8%B4%B5%E5%85%AC%E5%8F%B8%E4%BA%A7%E5%93%81%E7%9A%84%E6%9B%B4%E5%A4%9A%E4%BF%A1%E6%81%AF%E3%80%82">contact@company.com</a>
+            </p>
+            <p>
+              电话：
+              <a href="tel:4001234567">400-123-4567</a>
+            </p>
+            <p>地址：北京市朝阳区XXX街道XXX号</p>
+          </div>
+          <div class="footer-section">
+            <h3>关注我们</h3>
+            <div class="qr-code">
+              <img src="/images/qrcode.png" alt="微信公众号二维码" onerror="this.style.display='none'">
+              <p>扫码关注公众号</p>
+            </div>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <p>&copy; 2024 企业名称. 保留所有权利.</p>
+        </div>
+      </div>
+    </footer>
+    <script src="/js/main.js"></script>
+  </body>
+  </html>

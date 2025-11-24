@@ -90,31 +90,7 @@ def init_db():
         app.logger.exception("init_db error")
         # 在生产环境中，如果数据库未配置，这里会失败但不会阻止应用启动
 
-# 页面路由
-@app.route('/')
-def index():
-    app.logger.info("route %s", request.path)
-    return render_template('index.html')
-
-@app.route('/about')
-def about():
-    app.logger.info("route %s", request.path)
-    return render_template('about.html')
-
-@app.route('/contact')
-def contact():
-    app.logger.info("route %s", request.path)
-    return render_template('contact.html')
-
-@app.route('/products')
-def products():
-    app.logger.info("route %s", request.path)
-    return render_template('products.html')
-
-@app.route('/admin')
-def admin():
-    app.logger.info("route %s", request.path)
-    return render_template('admin.html')
+ 
 
 # API路由
 @app.route('/api/submit-contact', methods=['POST'])

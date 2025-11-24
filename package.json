@@ -1,9 +1,13 @@
 {
   "name": "company-website",
   "version": "1.0.0",
-  "description": "企业展示网站 - Vercel部署",
+  "description": "企业展示网站 - Jamstack (Astro + Vercel)",
+  "type": "module",
   "scripts": {
-    "dev": "vercel dev",
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "vercel:dev": "vercel dev",
     "deploy": "vercel --prod"
   },
   "keywords": [
@@ -12,6 +16,9 @@
     "company-website"
   ],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "astro": "^4.0.0"
+  }
 }
 
